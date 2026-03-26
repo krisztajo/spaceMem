@@ -29,7 +29,10 @@ interface Confetti {
 }
 
 const CIRCLE_RADIUS = 32;
-const MEMORIZE_TIME = 3000;
+function getMemorizeTime(level: number) {
+  // 3 másodperc + minden szinttel 400ms, de max 8 másodpercig nő
+  return Math.min(3000 + (level - 1) * 400, 8000);
+}
 const SHOW_CORRECT_TIME = 2000;
 const FLASH_DURATION = 400;
 const AREA_PADDING = 50;
@@ -135,14 +138,15 @@ export default function Game() {
     startRound();
   }, [startRound]);
 
+
   // Memorize timer
   useEffect(() => {
     if (phase !== "memorize") return;
     const timer = setTimeout(() => {
       setPhase("play");
-    }, MEMORIZE_TIME);
+    }, getMemorizeTime(level));
     return () => clearTimeout(timer);
-  }, [phase, circles]);
+  }, [phase, circles, level]);
 
   // Show correct answers after wrong click
   useEffect(() => {

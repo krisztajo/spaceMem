@@ -138,7 +138,6 @@ export default function Game() {
     startRound();
   }, [startRound]);
 
-
   // Memorize timer
   useEffect(() => {
     if (phase !== "memorize") return;

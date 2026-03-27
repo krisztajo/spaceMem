@@ -30,8 +30,8 @@ interface Confetti {
 
 const CIRCLE_RADIUS = 32;
 function getMemorizeTime(level: number) {
-  // 3 másodperc + minden szinttel 400ms, de max 8 másodpercig nő
-  return Math.min(3000 + (level - 1) * 400, 8000);
+  // 3 másodperc + minden szinttel 800ms, max 15 másodpercig nő
+  return Math.min(3000 + (level - 1) * 800, 15000);
 }
 const SHOW_CORRECT_TIME = 2000;
 const FLASH_DURATION = 400;
@@ -122,8 +122,8 @@ export default function Game() {
 
   const startRound = useCallback(() => {
     const area = gameAreaRef.current;
-    const w = area?.clientWidth ?? 600;
-    const h = area?.clientHeight ?? 500;
+    const w = area?.clientWidth || 600;
+    const h = area?.clientHeight || 500;
     const newCircles = generateCircles(circleCount, w, h);
     setCircles(newCircles);
     setPhase("memorize");
@@ -133,9 +133,10 @@ export default function Game() {
     setConfetti([]);
   }, [circleCount]);
 
-  // Start round when level changes
+  // Start round when level changes — defer with RAF so the game area is laid out first (fixes mobile width=0 bug)
   useEffect(() => {
-    startRound();
+    const frameId = requestAnimationFrame(() => startRound());
+    return () => cancelAnimationFrame(frameId);
   }, [startRound]);
 
   // Memorize timer
@@ -377,11 +378,13 @@ export default function Game() {
                   ${
                     isClicked
                       ? "bg-green-500/40 border-green-400 scale-90"
-                      : phase === "play"
-                        ? "bg-gray-800 border-cyan-500 hover:bg-cyan-900/40 hover:scale-110"
-                        : showNumbers
-                          ? "bg-purple-700/60 border-purple-400"
-                          : "bg-gray-800 border-gray-600"
+                      : phase === "showCorrect" && circle.number === nextExpected
+                        ? "bg-orange-500/60 border-orange-400 scale-110 animate-pulse"
+                        : phase === "play"
+                          ? "bg-gray-800 border-cyan-500 hover:bg-cyan-900/40 hover:scale-110"
+                          : showNumbers
+                            ? "bg-purple-700/60 border-purple-400"
+                            : "bg-gray-800 border-gray-600"
                   }`}
                 style={{
                   left: circle.x - CIRCLE_RADIUS,
@@ -393,7 +396,11 @@ export default function Game() {
                 {showNumbers || isClicked ? (
                   <span
                     className={`${
-                      isClicked ? "text-green-300" : "text-white"
+                      isClicked
+                        ? "text-green-300"
+                        : phase === "showCorrect" && circle.number === nextExpected
+                          ? "text-orange-200"
+                          : "text-white"
                     } text-xl font-bold`}
                   >
                     {circle.number}
